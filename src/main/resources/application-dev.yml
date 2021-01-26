@@ -1,0 +1,52 @@
+#profile:
+#  name: dev
+#
+#debug: true
+#
+#spring:
+#  datasource:
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://localhost:3306/blog?useunicode=true&characterEncoding=utf8&autoReconnect=true&useSSL=false&serverTimezone=GMT%2B8
+#    username: root
+#    password: root
+#  thymeleaf:
+#    encoding: UTF-8
+#    cache: false
+#    mode: HTML
+##  jackson:
+##    default-property-inclusion: non_empty
+##  redis:
+##    database: 0
+##    #url: redis://127.0.0.1:6379
+##    host: 127.0.0.1
+##    ssl: false
+##    timeout: 5000
+#
+##  autoconfigure:
+##    exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
+#
+#mapper:
+#  mappers:
+#    - tk.mybatis.mapper.common.Mapper
+#mybatis:
+#
+#  configuration:
+#    map-underscore-to-camel-case: true
+#    use-generated-keys: true
+#    use-column-label: true
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  #display sql
+#  mapper-locations: mapper/*.xml
+#  type-aliases-package: com.alex.spring.boot.blog.domain
+#
+#
+##logging:
+##  level:
+##    root: info
+##    org:
+##      springframework:
+##        web:DEBUG:
+##    com.coding: debug
+##    com.coding.mapper: debug
+#
+##custom:
+##  cache-expire-time: 120

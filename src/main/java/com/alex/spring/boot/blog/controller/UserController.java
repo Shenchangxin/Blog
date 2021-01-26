@@ -1,129 +1,139 @@
 package com.alex.spring.boot.blog.controller;
 
-
-import com.alex.spring.boot.blog.domain.Authority;
 import com.alex.spring.boot.blog.domain.User;
-import com.alex.spring.boot.blog.service.AuthorityService;
+import com.alex.spring.boot.blog.dto.PageResult;
+import com.alex.spring.boot.blog.dto.Result;
+import com.alex.spring.boot.blog.dto.StatusCode;
 import com.alex.spring.boot.blog.service.UserService;
-import com.alex.spring.boot.blog.util.ConstraintViolationExceptionHandler;
-import com.alex.spring.boot.blog.vo.Response;
+import com.alex.spring.boot.blog.util.FormatUtil;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.ui.Model;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.ModelAndView;
 
-import javax.validation.ConstraintViolationException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
 
-/**
- * 用户控制器.
- */
-
+@Api(tags = "用户api", description = "用户api", basePath = "/user")
 @RestController
-@RequestMapping("/users")
-@PreAuthorize("hasAuthority('ROLE_ADMIN')")  // 指定角色权限才能操作方法
+@RequestMapping("/user")
 public class UserController {
 
     @Autowired
     private UserService userService;
 
     @Autowired
-    private AuthorityService  authorityService;
+    private FormatUtil formatUtil;
+
 
     /**
-     * 查询所用用户
+     * 登录返回token
+     */
+    @ApiOperation(value = "用户登录", notes = "用户名+密码 name+password 返回token")
+    @PostMapping("/login")
+    public Result login(User user) {
+        if (!formatUtil.checkStringNull(user.getName(), user.getPassword())) {
+            return Result.create(StatusCode.ERROR, "参数错误");
+        }
+
+        try {
+            Map map = userService.login(user);
+            return Result.create(StatusCode.OK, "登录成功",map);
+        } catch (UsernameNotFoundException unfe) {
+            return Result.create(StatusCode.LOGINERROR, "登录失败，用户名或密码错误");
+        } catch (RuntimeException re) {
+            return Result.create(StatusCode.LOGINERROR, re.getMessage());
+        }
+
+    }
+
+
+    /**
+     * 用户退出登录
+     */
+    @ApiOperation(value = "用户退出登录")
+    @GetMapping("/logout")
+    public Result logout() {
+
+        userService.logout();
+        return Result.create(StatusCode.OK, "退出成功");
+    }
+
+
+    /**
+     * 用户注册
+     */
+    @ApiOperation(value = "用户注册", notes = "用户名+密码+邮箱 name+password+mail")
+    @PostMapping("/register")
+    public Result register(User user) {
+        if (!formatUtil.checkStringNull(
+                user.getName(),
+                user.getPassword(),
+                user.getMail())){
+            return Result.create(StatusCode.ERROR, "注册失败，字段不完整");
+        }
+        try {
+            userService.register(user);
+            return Result.create(StatusCode.OK, "注册成功");
+        } catch (RuntimeException e) {
+            return Result.create(StatusCode.ERROR, "注册失败，" + e.getMessage());
+        }
+    }
+    /**
+     * 用户封禁或解禁
+     *
+     * @param id
+     * @param state
      * @return
      */
-    @GetMapping
-    public ModelAndView list(@RequestParam(value="async",required=false) boolean async,
-                             @RequestParam(value="pageIndex",required=false,defaultValue="0") int pageIndex,
-                             @RequestParam(value="pageSize",required=false,defaultValue="10") int pageSize,
-                             @RequestParam(value="name",required=false,defaultValue="") String name,
-                             Model model) {
+    @ApiOperation(value = "用户封禁或解禁", notes = "用户id+状态 id+state")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @GetMapping("/ban/{id}/{state}")
+    public Result banUser(@PathVariable Integer id, @PathVariable Integer state) {
 
-        Pageable pageable = PageRequest.of(pageIndex, pageSize);
-        Page<User> page = userService.listUsersByNameLike(name, pageable);
-        List<User> list = page.getContent();	// 当前所在页面数据列表
-
-        model.addAttribute("page", page);
-        model.addAttribute("userList", list);
-        return new ModelAndView(async==true?"users/list :: #mainContainerRepleace":"users/list", "userModel", model);
-    }
-
-    /**
-     * 获取form表单页面
-     */
-    @GetMapping("/add")
-    public ModelAndView createForm(Model model) {
-        model.addAttribute("user", new User(null, null, null, null));
-        return new ModelAndView("users/add", "userModel", model);
-    }
-
-    /**
-     * 新建用户
-     */
-    @PostMapping
-    public ResponseEntity<Response> create(User user, Long authorityId) {
-        List<Authority> authorities = new ArrayList<>();
-        authorities.add(authorityService.getAuthorityById(authorityId));
-        user.setAuthorities(authorities);
-
-        if(user.getId() == null) {
-            user.setEncodePassword(user.getPassword()); // 加密密码
-        }else {
-            // 判断密码是否做了变更
-            User originalUser = userService.getUserById(user.getId());
-            String rawPassword = originalUser.getPassword();
-            PasswordEncoder  encoder = new BCryptPasswordEncoder();
-            String encodePasswd = encoder.encode(user.getPassword());
-            boolean isMatch = encoder.matches(rawPassword, encodePasswd);
-            if (!isMatch) {
-                user.setEncodePassword(user.getPassword());
-            }else {
-                user.setPassword(user.getPassword());
-            }
+        if (!formatUtil.checkObjectNull(id, state)) {
+            return Result.create(StatusCode.ERROR, "参数错误");
         }
 
-        try {
-            userService.saveUser(user);
-        }  catch (ConstraintViolationException e)  {
-            return ResponseEntity.ok().body(new Response(false, ConstraintViolationExceptionHandler.getMessage(e)));
-        }
 
-        return ResponseEntity.ok().body(new Response(true, "处理成功", user));
+        if (state == 0) {
+            userService.updateUserState(id, state);
+            return Result.create(StatusCode.OK, "封禁成功");
+        } else if (state == 1) {
+            userService.updateUserState(id, state);
+            return Result.create(StatusCode.OK, "解禁成功");
+        } else {
+            return Result.create(StatusCode.ERROR, "参数错误");
+        }
+    }
+    @ApiOperation(value = "分页查询用户", notes = "页码+显示数量")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @GetMapping("/{page}/{showCount}")
+    public Result findUser(@PathVariable Integer page, @PathVariable Integer showCount) {
+        if (!formatUtil.checkPositive(page, showCount)) {
+            return Result.create(StatusCode.ERROR, "参数错误");
+        }
+        PageResult<User> pageResult =
+                new PageResult<>(userService.getUserCount(), userService.findUser(page, showCount));
+        return Result.create(StatusCode.OK, "查询成功", pageResult);
     }
 
-    /**
-     * 删除用户
-     */
-    @DeleteMapping(value = "/{id}")
-    public ResponseEntity<Response> delete(@PathVariable("id") Long id, Model model) {
-        try {
-            userService.removeUser(id);
-        } catch (Exception e) {
-            return  ResponseEntity.ok().body( new Response(false, e.getMessage()));
-        }
-        return  ResponseEntity.ok().body( new Response(true, "处理成功"));
-    }
 
-    /**
-     * 获取修改用户的界面，及数据
-     */
-    @GetMapping(value = "edit/{id}")
-    public ModelAndView modifyForm(@PathVariable("id") Long id, Model model) {
-        User user = userService.getUserById(id);
-        model.addAttribute("user", user);
-        return new ModelAndView("users/edit", "userModel", model);
+    @ApiOperation(value = "根据用户名分页搜索用户", notes = "页码+显示数量+搜索内容")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @GetMapping("/search/{page}/{showCount}")
+    public Result searchUser(String userName, @PathVariable Integer page, @PathVariable Integer showCount) {
+        if (!formatUtil.checkStringNull(userName)) {
+            return Result.create(StatusCode.ERROR, "参数错误");
+        }
+        if (!formatUtil.checkPositive(page, showCount)) {
+            return Result.create(StatusCode.ERROR, "参数错误");
+        }
+        PageResult<User> pageResult =
+                new PageResult<>(userService.getUserCountByName(userName), userService.searchUserByName(userName, page, showCount));
+
+        return Result.create(StatusCode.OK, "查询成功", pageResult);
     }
 }
-
-

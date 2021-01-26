@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.alex.spring.boot.blog.mapper.VoteMapper">
+
+    <resultMap id="Vote" type="com.alex.spring.boot.blog.domain.Vote">
+        <id property="id" column="id"/>
+        <result property="user.id" column="user_id"/>
+        <result property="blog.id" column="blog_id"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <insert id="saveVote" parameterType="com.alex.spring.boot.blog.domain.Vote">
+        INSERT INTO vote(id, user_id, blog_id, status)
+        VALUES(#{id}, #{user.id}, #{blog.id}, #{status})
+        ON DUPLICATE KEY UPDATE status = #{status}
+    </insert>
+
+    <select id="getVote" resultMap="Vote">
+        SELECT id, user_id, blog_id, status
+        FROM vote
+        WHERE user_id = #{userId} AND blog_id = #{blogId}
+    </select>
+
+</mapper>

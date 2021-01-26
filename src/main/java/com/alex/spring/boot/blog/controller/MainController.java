@@ -1,82 +1,88 @@
-package com.alex.spring.boot.blog.controller;
-
-import com.alex.spring.boot.blog.domain.Authority;
-import com.alex.spring.boot.blog.domain.User;
-import com.alex.spring.boot.blog.service.AuthorityService;
-import com.alex.spring.boot.blog.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * 主页控制器
- */
-
-@Controller
-public class MainController {
-
-    private static final Long ROLE_USER_AUTHORITY_ID = 2L;
-
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private AuthorityService  authorityService;
-
-    @GetMapping("/")
-    public String root() {
-        return "redirect:/index";
-    }
-
-    @GetMapping("/index")
-    public String index() {
-        return "index";
-    }
-
-    /**
-     * 获取登录界面
-     * @return
-     */
-    @GetMapping("/login")
-    public String login() {
-        return "login";
-    }
-
-    @GetMapping("/login-error")
-    public String loginError(Model model) {
-        model.addAttribute("loginError", true);
-        model.addAttribute("errorMsg", "登陆失败，账号或者密码错误！");
-        return "login";
-    }
-
-    @GetMapping("/register")
-    public String register() {
-        return "register";
-    }
-
-    /**
-     * 注册用户
-     */
-    @PostMapping("/register")
-    public String registerUser(User user) {
-        List<Authority> authorities = new ArrayList<>();
-        authorities.add(authorityService.getAuthorityById(ROLE_USER_AUTHORITY_ID));
-        user.setAuthorities(authorities);
-        user.setEncodePassword(user.getPassword());
-        userService.saveUser(user);
-        return "redirect:/login";
-    }
-
-    @GetMapping("/search")
-    public String search() {
-        return "search";
-    }
-}
-
+//package com.alex.spring.boot.blog.controller;
+//import com.alex.spring.boot.blog.domain.User;
+//import com.alex.spring.boot.blog.dto.Result;
+//import com.alex.spring.boot.blog.dto.StatusCode;
+//import com.alex.spring.boot.blog.service.UserService;
+//import com.alex.spring.boot.blog.util.FormatUtil;
+//import io.swagger.annotations.Api;
+//import io.swagger.annotations.ApiOperation;
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.security.core.userdetails.UsernameNotFoundException;
+//import org.springframework.web.bind.annotation.*;
+//import java.util.*;
+//
+///**
+// * 主页控制器
+// */
+//@Api(tags ={"MainController"})
+//@RestController
+//@RequestMapping("/")
+//public class MainController {
+//
+//    //private static final Long ROLE_USER_AUTHORITY_ID = 2L;
+//
+//    @Autowired
+//    private UserService userService;
+//
+//    @Autowired
+//    private FormatUtil formatUtil;
+//
+//
+//    /**
+//     * 登录返回token
+//     */
+//    @ApiOperation(value = "用户登录", notes = "用户名+密码 name+password 返回token")
+//    @PostMapping("/login")
+//    public Result login(User user) {
+//        if (!formatUtil.checkStringNull(user.getName(), user.getPassword())) {
+//            return Result.create(StatusCode.ERROR, "参数错误");
+//        }
+//
+//        try {
+//            Map map = userService.login(user);
+//            return Result.create(StatusCode.OK, "登录成功",map);
+//        } catch (UsernameNotFoundException unfe) {
+//            return Result.create(StatusCode.LOGINERROR, "登录失败，用户名或密码错误");
+//        } catch (RuntimeException re) {
+//            return Result.create(StatusCode.LOGINERROR, re.getMessage());
+//        }
+//
+//    }
+//
+//
+//    /**
+//     * 用户退出登录
+//     */
+//    @ApiOperation(value = "用户退出登录")
+//    @GetMapping("/logout")
+//    public Result logout() {
+//
+//        userService.logout();
+//        return Result.create(StatusCode.OK, "退出成功");
+//    }
+//
+//
+//    /**
+//     * 用户注册
+//     */
+//    @ApiOperation(value = "用户注册", notes = "用户名+密码+邮箱 name+password+mail")
+//    @PostMapping("/register")
+//    public Result register(User user) {
+//        if (!formatUtil.checkStringNull(
+//                user.getName(),
+//                user.getPassword(),
+//                user.getMail())){
+//            return Result.create(StatusCode.ERROR, "注册失败，字段不完整");
+//        }
+//        try {
+//            userService.register(user);
+//            return Result.create(StatusCode.OK, "注册成功");
+//        } catch (RuntimeException e) {
+//            return Result.create(StatusCode.ERROR, "注册失败，" + e.getMessage());
+//        }
+//    }
+//
+//}
+//
 
 

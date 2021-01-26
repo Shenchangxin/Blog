@@ -1,61 +1,64 @@
 package com.alex.spring.boot.blog.domain;
 
 
+import io.swagger.annotations.ApiModel;
+import lombok.Data;
+import lombok.ToString;
 import java.io.Serializable;
-import java.sql.Timestamp;
-
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
+import java.util.Date;
 
 /**
- * Vote 实体
+ * 用户点赞状态
  */
-@Entity // 实体
+@Data
+@ToString
+@ApiModel("点赞")
 public class Vote implements Serializable {
-    private static final long serialVersionUID = 1L;
 
-    @Id // 主键
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // 自增长策略
-    private Long id; // 用户的唯一标识
+    private static final long serialVersionUID = -3956628880213302317L;
 
-    @OneToOne(cascade = CascadeType.DETACH, fetch = FetchType.LAZY)
-    @JoinColumn(name="user_id")
+    /**
+     * 主键id
+     */
+    private Integer id;
+
+    /**
+     * 点赞的用户
+     */
     private User user;
 
-    @Column(nullable = false) // 映射为字段，值不能为空
-    @org.hibernate.annotations.CreationTimestamp  // 由数据库自动创建时间
-    private Timestamp createTime;
+    /**
+     * 被点赞的用户的博文
+     */
+    private Blog blog;
 
-    protected Vote() {
+    /**
+     * 点赞的状态.默认未点赞
+     */
+    private Integer status = 0;
+
+    /**
+     * 创建时间
+     */
+    private Date createTime;
+
+    /**
+     * 更新时间
+     */
+    private Date updateTime;
+
+    public Vote() {
     }
 
-    public Vote(User user) {
+    public Vote(int blogId, int userId, int status) {
+        Blog blog = new Blog();
+        blog.setId(blogId);
+
+        User user = new User();
+        user.setId(userId);
+
+        this.blog = blog;
         this.user = user;
+        this.status = status;
     }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-    public User getUser() {
-        return user;
-    }
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public Timestamp getCreateTime() {
-        return createTime;
-    }
-
 }

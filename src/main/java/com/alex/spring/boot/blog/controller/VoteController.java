@@ -1,87 +1,57 @@
 package com.alex.spring.boot.blog.controller;
 
-import javax.validation.ConstraintViolationException;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import com.alex.spring.boot.blog.domain.User;
-import com.alex.spring.boot.blog.service.BlogService;
+import com.alex.spring.boot.blog.domain.Vote;
+import com.alex.spring.boot.blog.dto.Result;
+import com.alex.spring.boot.blog.dto.StatusCode;
 import com.alex.spring.boot.blog.service.VoteService;
-import com.alex.spring.boot.blog.util.ConstraintViolationExceptionHandler;
-import com.alex.spring.boot.blog.vo.Response;
-
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 /**
- * 点赞控制器.
+ * 用户点赞
  */
-@Controller
-@RequestMapping("/votes")
+@Api(tags = "用户点赞api", description = "用户点赞api", basePath = "/vote")
+@RestController
+@RequestMapping("/vote")
 public class VoteController {
-
-    @Autowired
-    private BlogService blogService;
 
     @Autowired
     private VoteService voteService;
 
     /**
-     * 发表点赞
+     * 保存点赞数据
      */
-    @PostMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")  // 指定角色权限才能操作方法
-    public ResponseEntity<Response> createVote(Long blogId) {
-
-        try {
-            blogService.createVote(blogId);
-        } catch (ConstraintViolationException e)  {
-            return ResponseEntity.ok().body(new Response(false, ConstraintViolationExceptionHandler.getMessage(e)));
-        } catch (Exception e) {
-            return ResponseEntity.ok().body(new Response(false, e.getMessage()));
+    @ApiOperation(value = "保存点赞数据")
+    @PostMapping("/saveVote")
+    @PreAuthorize("hasAuthority('ROLE_USER')")
+    public Result saveUserLike(Vote vote) {
+        if (voteService.getVote(vote.getBlog().getId())) {
+            return Result.create(StatusCode.ERROR, "你已点过赞");
         }
 
-        return ResponseEntity.ok().body(new Response(true, "点赞成功", null));
+        try {
+            voteService.saveVote(vote);
+            return Result.create(StatusCode.OK, "点赞记录保存成功");
+        } catch (RuntimeException re) {
+            return Result.create(StatusCode.ERROR, re.getMessage());
+        }
     }
 
     /**
-     * 删除点赞
+     * 判断用户是否点过赞
      */
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")  // 指定角色权限才能操作方法
-    public ResponseEntity<Response> delete(@PathVariable("id") Long id, Long blogId) {
-
-        boolean isOwner = false;
-        User user = voteService.getVoteById(id).getUser();
-
-        // 判断操作用户是否是点赞的所有者
-        if (SecurityContextHolder.getContext().getAuthentication() !=null && SecurityContextHolder.getContext().getAuthentication().isAuthenticated()
-                &&  !SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString().equals("anonymousUser")) {
-            User principal = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            if (principal !=null && user.getUsername().equals(principal.getUsername())) {
-                isOwner = true;
-            }
-        }
-
-        if (!isOwner) {
-            return ResponseEntity.ok().body(new Response(false, "没有操作权限"));
-        }
-
+    @ApiOperation(value = "用户是否点过赞")
+    @GetMapping("/isVote/{blogId}")
+    @PreAuthorize("hasAuthority('ROLE_USER')")
+    public Result getUserLike(@PathVariable Integer blogId) {
         try {
-            blogService.removeVote(blogId, id);
-            voteService.removeVote(id);
-        } catch (ConstraintViolationException e)  {
-            return ResponseEntity.ok().body(new Response(false, ConstraintViolationExceptionHandler.getMessage(e)));
-        } catch (Exception e) {
-            return ResponseEntity.ok().body(new Response(false, e.getMessage()));
+            return Result.create(StatusCode.OK, "获取点赞记录成功", voteService.getVote(blogId));
+        } catch (RuntimeException re) {
+            return Result.create(StatusCode.ERROR, re.getMessage());
         }
-
-        return ResponseEntity.ok().body(new Response(true, "取消点赞成功", null));
     }
 }

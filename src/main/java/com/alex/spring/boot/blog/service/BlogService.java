@@ -1,72 +1,175 @@
 package com.alex.spring.boot.blog.service;
 
 import com.alex.spring.boot.blog.domain.Blog;
-import com.alex.spring.boot.blog.domain.Catalog;
-import com.alex.spring.boot.blog.domain.User;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.springframework.transaction.annotation.Transactional;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Blog服务接口
  */
 public interface BlogService {
-    /**
-     * 保存Blog
-     */
-    Blog saveBlog(Blog blog);
 
     /**
-     * 删除Blog
+     * 保存博文
+     *
+     * @param blogTitle
+     * @param blogBody
+     * @param tagIds
      */
-    void removeBlog(Long id);
+    void saveBlog(String blogTitle, String blogBody, Integer[] tagIds) throws JsonProcessingException;
 
     /**
-     * 更新Blog
+     * 根据id查询博文以及博文标签
+     * 正常状态
+     *
+     * @param blogId
+     * @return
      */
-    Blog updateBlog(Blog blog);
+    Blog findBlogById(Integer blogId, boolean isHistory) throws IOException;
+
 
     /**
-     * 根据id获取Blog
+     * 根据用户查询博文以及标签
+     * 正常状态
+     *
+     * @param page      页数
+     * @param showCount 显示数量
+     * @return
      */
-    Blog getBlogById(Long id);
+    List<Blog> findBlogByUser(Integer page, Integer showCount) ;
 
     /**
-     * 根据用户名进行分页模糊查询（最新）
+     * 查询该用户的博客数量
+     * 正常状态
+     *
+     * @return
      */
-    Page<Blog> listBlogsByTitleLike(User user, String title, Pageable pageable);
+    Long getBlogCountByUser();
 
     /**
-     * 根据用户名进行分页模糊查询（最热）
+     * 查询主页所有博客数量
+     * 正常状态
+     *
+     * @return
      */
-    Page<Blog> listBlogsByTitleLikeAndSort(User user, String title, Pageable pageable);
+    Long getHomeBlogCount();
 
     /**
-     * 阅读量递增
+     * 查询主页博客
+     * 正常状态
+     *
+     * @param page      页码
+     * @param showCount 显示条数
+     * @return
      */
-    void readingIncrease(Long id);
+    List<Blog> findHomeBlog(Integer page, Integer showCount) throws IOException;
 
     /**
-     * 发表评论
+     * 查询热门博文
+     * 正常状态
+     *
+     * @return
      */
-    Blog createComment(Long blogId, String commentContent);
+    List<Blog> findHotBlog() throws IOException ;
 
     /**
-     * 删除评论
+     * 搜索博文
+     * 正常状态
+     *
+     * @param searchText
+     * @return
      */
-    void removeComment(Long blogId, Long commentId);
+    List<Blog> searchBlog(String searchText, Integer page, Integer showCount);
 
     /**
-     * 点赞
+     * 符合关键词的博文数量
+     * 正常状态
+     *
+     * @param searchText
+     * @return
      */
-    Blog createVote(Long blogId);
+    Long getSearchBlogCount(String searchText);
 
     /**
-     * 取消点赞
+     * 查询所有博文
+     * 正常状态
+     *
+     * @return
      */
-    void removeVote(Long blogId,Long voteId);
+    List<Blog> findAllBlog(Integer page, Integer showCount);
 
     /**
-     * 根据分类进行查询
+     * 修改博文
+     *
+     * @param blogId
+     * @param blogTitle
+     * @param blogBody
+     * @param tagIds
      */
-    Page<Blog> listBlogsByCatalog(Catalog catalog,Pageable pageable);
+    void updateBlog(Integer blogId, String blogTitle, String blogBody, Integer[] tagIds) throws JsonProcessingException;
+
+    /**
+     * 用户删除博文
+     *
+     * @param blogId
+     */
+    void deleteBlog(Integer blogId) throws JsonProcessingException ;
+
+    /**
+     * 管理员删除博文
+     *
+     * @param blogId
+     */
+    void adminDeleteBlog(Integer blogId)throws JsonProcessingException;
+
+
+
+    /**
+     * 符合关键字的博文数量
+     * 所有状态
+     *
+     * @param searchText
+     * @return
+     */
+    Long getSearchAllBlogCount(String searchText);
+
+    /**
+     * 搜索博文
+     * 所有状态
+     *
+     * @param searchText 搜索内容
+     * @param page
+     * @param showCount
+     * @return
+     */
+    List<Blog> searchAllBlog(String searchText, Integer page, Integer showCount) ;
+
+
+    /**
+     * 按月份归档博客
+     * 正常状态
+     *
+     * @return
+     */
+    List<Map> statisticalBlogByMonth()throws IOException;
+
+    /**
+     * 查询博客记录数
+     * 所有状态
+     *
+     * @return
+     */
+    Long getAllBlogCount();
+
+    /**
+     * @Description: 获取用户点赞数
+     * @Param: [blogId]
+     * @return: int
+     */
+    int getBlogLikeCountByBlogId(Integer blogId);
+
+
 }

@@ -1,10 +1,11 @@
 package com.alex.spring.boot.blog.service;
 
 import com.alex.spring.boot.blog.domain.User;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -13,37 +14,74 @@ import java.util.List;
 
 public interface UserService {
     /**
-     * 保存用户
+     * 登陆服务
      */
-    User saveUser(User user);
+    Map login(User user);
 
     /**
-     * 删除用户
+     * 根据用户名查询用户
      */
-    void removeUser(Long id);
+    User findUserByName(String username);
 
     /**
-     * 删除列表里面的用户
+     * 根据用户名加载用户
      */
-    void removeUsersInBatch(List<User> users);
+    UserDetails loadUserByUsername(String name) throws UsernameNotFoundException;
 
     /**
-     * 更新用户
+     * 注销登录服务
      */
-    User updateUser(User user);
+    void logout();
 
     /**
-     * 根据id获取用户
+     * 注册用户服务
      */
-    User getUserById(Long id);
+    void register(User user);
 
     /**
-     * 获取用户列表
+     * 根据用户名分页搜索用户
+     *
+     * @param userName
+     * @return
      */
-    List<User> listUsers();
+    List<User> searchUserByName(String userName, Integer page, Integer showCount);
 
     /**
-     * 根据用户名进行分页模糊查询
+     * 分页查询用户
+     *
+     * @param page
+     * @param showCount
+     * @return
      */
-    Page<User> listUsersByNameLike(String name, Pageable pageable);
+    List<User> findUser(Integer page, Integer showCount);
+
+    /**
+     * 查询用户数
+     *
+     * @return
+     */
+    Long getUserCount();
+
+
+    /**
+     * 查询用户邮箱
+     *
+     * @return
+     */
+    String findUserMail();
+
+    /**
+     * 模糊查询用户名 返回记录数
+     *
+     * @param userName
+     * @return
+     */
+    Long getUserCountByName(String userName);
+    /**
+     * 封禁或解禁用户
+     *
+     * @param id
+     * @param state
+     */
+    void updateUserState(Integer id, Integer state);
 }

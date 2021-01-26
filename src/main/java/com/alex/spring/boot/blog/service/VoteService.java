@@ -2,18 +2,16 @@ package com.alex.spring.boot.blog.service;
 
 import com.alex.spring.boot.blog.domain.Vote;
 
-/**
- * Vote服务接口
- */
+
+
 public interface VoteService {
 
     /**
-     * 根据id获取Vote
+     * @Description: 保存用户点赞数据
      */
-    Vote getVoteById(Long id);
-
+    void saveVote(Vote vote);
     /**
-     * 删除Vote
+     * @Description: 用户是否点过赞
      */
-    void removeVote(Long id);
+    boolean getVote(Integer blogId);
 }
